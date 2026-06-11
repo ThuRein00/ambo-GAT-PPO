@@ -78,7 +78,7 @@ A Double Standard Model (linear program via PuLP) optimizes the initial number o
 
 PPO from Stable-Baselines3 with a custom GAT feature extractor, trained across all CPU cores in parallel.
 
-**hyperparameters**
+**Hyperparameters**
 
 | Parameter | Value |
 |---|---|

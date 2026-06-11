@@ -28,3 +28,4 @@ self_loop.zip
 # Utility/scratch scripts
 load.py
 state_2_graph.py
+test.py
