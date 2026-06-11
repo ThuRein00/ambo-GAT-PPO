@@ -97,6 +97,7 @@ PPO from Stable-Baselines3 with a custom GAT feature extractor, trained across a
 
 
 ## File Structure
+```
 DES_ambo.py               # Gymnasium DES environment
 GAT.py                    # Graph Attention Network feature extractor
 DSM_ambo.py               # Double Standard Model (initial placement optimizer)
@@ -109,6 +110,7 @@ data/
 ├── distance_hospital_to_base.csv
 ├── distance_base_to_base.csv
 └── nearest_places_data.csv
+```
 
 ## Dependencies
 simpy
