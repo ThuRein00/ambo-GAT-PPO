@@ -81,7 +81,7 @@ class DSM:
                 print(f"  Ambulance Base {j}: {y[j].value()} ambulances")
             num_ambulamces.append(y[j].value())
         ambulance_initialization['initial_ambulances'] = num_ambulamces
-        ambulance_initialization.to_csv("final_version/data/ambulance_initialization.csv",index=False)
+        ambulance_initialization.to_csv("data/ambulance_initialization.csv",index=False)
 
         print("\nDemand coverage:")
         for i in incident_id:
@@ -108,11 +108,13 @@ for name, path in file_paths.items():
 
 # Load files 
 accident_rate = pd.read_csv(file_paths["accident_rate"])
-accident_rate = (accident_rate ) * (12/16.4) # avg rate across each period
 print(f"mean_rate = {np.sum(np.array(accident_rate['mean_rate']))}")
+print(f"Sum of raw rates: {accident_rate['mean_rate'].sum()}")
+print(f"Non-zero count: {(accident_rate['mean_rate'] != 0).sum()}")
+print(f"After adjustment: {(accident_rate['mean_rate'] * (12/21.48)).sum()}")
+accident_rate = accident_rate * (12/21.48) # avg rate across all periods
 distance_Base_to_Incident_df = pd.read_csv(file_paths["distance_Base_to_Incident_df"])
 nearest_place = pd.read_csv(file_paths["nearest_place"])
-
 solver = DSM(accident_rate,nearest_place,distance_Base_to_Incident_df)
 
 # Initialize simulation

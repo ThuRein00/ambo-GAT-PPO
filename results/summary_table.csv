@@ -1,0 +1,5 @@
+Policy,Pick-up Ratio (Mean ± 95% CI),Avg Response Time (Mean ± 95% CI)
+Random,0.2365 ± 0.0043,25.5580 ± 1.0878
+DSM,0.7224 ± 0.0077,8.6447 ± 0.3651
+Flat,0.7302 ± 0.0047,7.4863 ± 0.0994
+GAT PPO,0.7774 ± 0.0043,6.9925 ± 0.0759

@@ -22,7 +22,7 @@ class DES_ambo(gym.Env):
                 run_until = 1440 ,
                 trace=False,
                 test = False,
-                factor =None):
+                flat_feature = False):
 
 
         # Inherit from super class
@@ -31,9 +31,6 @@ class DES_ambo(gym.Env):
         self.trace_enabled = trace
         self.MINS_PER_DAY = 1440 # minute
         self.AMBULANCE_SPEED = 1000 # meter/min 
-
-        # noise factor
-        self.factor = factor
 
         #  Data
         self.accident_rate = accident_rate
@@ -50,6 +47,9 @@ class DES_ambo(gym.Env):
 
         # For testing return to own base behavior
         self.test = test
+
+        # flat or graph features
+        self.flat_feature = flat_feature
 
         # How many minutes environment run
         self.run_until = run_until
@@ -69,28 +69,20 @@ class DES_ambo(gym.Env):
         else: num_action = self.NUM_AMBULANCE_BASES
         self.action_space = spaces.Discrete(num_action) 
 
-        # Set observation space
-        self.observation_space = spaces.Dict({
-                                                "ambo_count" : spaces.Box(  low=0,
-                                                                            high=1,
-                                                                            shape=(self.NUM_AMBULANCE_BASES,),
-                                                                            dtype=np.float32),
-                                                "demand_forecast": spaces.Box(low=0, 
-                                                                            high=1,
-                                                                            shape=(12,self.NUM_AMBULANCE_BASES),
-                                                                            dtype=np.float32),
-                                                "relocation_travel_times": spaces.Box(low=0,
-                                                                                      high=1,
-                                                                                      shape=(self.NUM_AMBULANCE_BASES,),
-                                                                                      dtype=np.float32),
-                                                "expected_relocation_complete": spaces.Box(low=0,
-                                                                                           high=1,
-                                                                                           shape=(self.NUM_AMBULANCE_BASES,3),
-                                                                                           dtype=np.float32),
+        if not self.flat_feature: # for GAT
+            self.observation_space = spaces.Box(
+                                                low=0, high=1,
+                                                shape=(self.NUM_AMBULANCE_BASES, 6),  
+                                                dtype=np.float32
+                                        )
 
-                                            })
-        
-           
+        else:
+            self.observation_space = spaces.Box(
+                                                low=0, high=1,
+                                                shape=(self.NUM_AMBULANCE_BASES*6,),  
+                                                dtype=np.float32
+                                        )
+                                            
 
     def reset(self,seed = None , options = None ):
         #random number generator
@@ -128,7 +120,6 @@ class DES_ambo(gym.Env):
 
         #initialize events
         self.arrived_hospital = self.env.event()
-        # self.relocation_complete = self.env.event()
         self.ambo_available = self.env.event()
 
         # store waiting incidents events
@@ -220,7 +211,7 @@ class DES_ambo(gym.Env):
                     arrival = (mean_interarrival) * 2 #12
 
             else:
-                arrival = np.inf
+                break
 
             inter_arrival = self.rng.exponential(arrival) 
             yield self.env.timeout(inter_arrival)
@@ -488,9 +479,6 @@ class DES_ambo(gym.Env):
         self.relocation_travel_time_arr.append(travel_time)
 
 
-        # if not self.relocation_complete.triggered:
-        #     self.relocation_complete.succeed()
-           
         # triggered this only if there is waiting incidents
         # if there is waiting accidents, returned ambulance is assigned to the incident in FIFO
         if self.waiting_incidents:
@@ -512,7 +500,7 @@ class DES_ambo(gym.Env):
         ambo_count = np.clip((np.array(num_ambulances_at_each_base, dtype=np.float32) / 5) ,0,1)
 
         #factor 2 (demand forecast)
-        demand_forecast = np.clip((np.array(self.accident_rate_pred, dtype=np.float32)/ self.max_incident_num),0,1)
+        demand_forecast = np.clip((np.array(self.accident_rate_pred[self.period], dtype=np.float32)/ self.max_incident_num),0,1)
 
         # factor 3 (expected relocation finish time)
         # A large constant time to use for padding (30 min is fiest filled for every slot)
@@ -550,18 +538,22 @@ class DES_ambo(gym.Env):
         else:
             relocation_travel_times = np.clip(np.array(self.relocation_travel_times, dtype=np.float32),0,1)
 
-        
-        
-        observation = {
-                        "ambo_count": np.array(ambo_count, dtype=np.float32),
-                        "demand_forecast": np.array(demand_forecast, dtype=np.float32),
-                        "relocation_travel_times": np.array(relocation_travel_times, dtype=np.float32),
-                        "expected_relocation_complete":np.array(scaled_returning_times_state, dtype=np.float32),
-
-                     }
+        if not self.flat_feature:
+            observation = np.concatenate([ relocation_travel_times.reshape(-1, 1),  # (52, 1)
+                                            ambo_count.reshape(-1, 1),              # (52, 1)
+                                            demand_forecast.reshape(-1,1),          # (52, 1)
+                                            scaled_returning_times_state            # (52, 3)
+                                        ], axis=1).astype(np.float32)               # (52, 6)
+        else:
+            observation = np.concatenate([  ambo_count.reshape(-1, 1),
+                                            demand_forecast.reshape(-1, 1),
+                                            scaled_returning_times_state,
+                                            relocation_travel_times.reshape(-1, 1)
+                                        ], axis=1).flatten().astype(np.float32)  # flatten 
         return observation
     
     def step(self, action):
+
         # this function is called when self.arrived_hospital is triggered
         self.reward = []
         self.trace(f"Action received: {action}")
@@ -633,8 +625,7 @@ register(
         'run_until' :1440,
         'trace' : False,
         'test' : False,
-        'factor' : None
+        'flat_feature' : False
 
     }
 )
-
