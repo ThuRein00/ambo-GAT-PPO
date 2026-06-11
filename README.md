@@ -113,6 +113,7 @@ data/
 ```
 
 ## Dependencies
+'''
 simpy
 gymnasium
 stable-baselines3
@@ -122,6 +123,7 @@ numpy
 pandas
 pulp
 matplotlib
+'''
 
 ## Usage
 
