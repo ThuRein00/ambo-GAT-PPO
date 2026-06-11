@@ -24,3 +24,7 @@ flat_stat.pkl
 flat.zip
 self_loop_stat.pkl
 self_loop.zip
+
+# Utility/scratch scripts
+load.py
+state_2_graph.py

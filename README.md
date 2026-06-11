@@ -11,12 +11,12 @@ A Deep Reinforcement Learning system for dynamic ambulance redeployment in Bangk
 | DSM (Double Standard Model) | 0.72 ± 0.01 | 8.64 ± 0.37 |
 | Flat_PPO | 0.73 ± 0.004 | 7.49 ± 0.1 |
 | **GAT_PPO (ours)** | **0.78 ± 0.004** | **6.99 ± 0.08** |
-Results are a over verage 500 simlations with 35 ambulance fleet.
+Results are averaged over 500 simulations with a 35 ambulance fleet.
 
 DSM is classical static model with no relocation. Ambulances go back to pre-assigned base.
 GAT_PPO outperforms over DSM by **8.3%** in pick-up ratio and **19%** in average response time.
 
-Flat PPO is a standard PPO agent. Features of ambulance bases are passed dierclty into the PPO agent. There is no graph structure between ambulance bases.
+Flat PPO is a standard PPO agent. Features of ambulance bases are passed directly into the PPO agent. There is no graph structure between ambulance bases.
 GAT_PPO improves over flat PPO by **6.8%** in pick-up ratio and **6.7%** in average response time respectively.
 
 
@@ -35,17 +35,21 @@ A Discrete Event Simulation built with SimPy and wrapped in a Gymnasium interfac
 **Spatial Setup**
 - Bangkok divided into **126 finer grid cells** → incident generation points
 ![alt text](pictures/incident_grid.png)
+
 - Bangkok divided into **52 grid cells** → potential ambulance bases
 ![alt text](pictures/base_location.png)
+
 - Shortest-path distances pre-computed via A\* on OpenStreetMap road network and stored as lookup tables for fast access
 
-Graph Construction
+**Graph Construction**
 - **Nodes** = 52 ambulance bases 
+
 - **Node Features**
-1. Current ambulance count 
-2. Expected Demand of current period
-3. relocation travel time from current hospital to the base
-4. Near-future coverage (expected arrival times of up to 3 returning ambulances)
+            1. Current ambulance count 
+            2. Expected Demand of current period
+            3. relocation travel time from current hospital to the base
+            4. Near-future coverage (expected arrival times of up to 3 returning ambulances)
+
 - **Edges** = immediate grid neighbors (left/right/up/down)
 
 - A single `GATConv` layer (`in_channels=6, out_channels=64`) produces enriched per-base embeddings that are flattened and fed to the shared PPO network
@@ -53,11 +57,12 @@ Graph Construction
 
 ## Graph Attention Network Architecture ([`GAT.py`](GAT.py))
 ![alt text](pictures/Architecture.png)
-At each staet, instead of feeding a flat vector, the state is represented as a **graph of 52 ambulance bases** and processed by a Graph Attention Network (GAT) to have spatial awareness between ambulance bases. Resulted state embedding is then passed to the PPO actor-critic Networks.
+At each state, instead of feeding a flat vector, the state is represented as a **graph of 52 ambulance bases** and processed by a Graph Attention Network (GAT) to have spatial awareness between ambulance bases. Resulted state embedding is then passed to the PPO actor-critic Networks.
 
 This spatially-aware graph representation lets the agent learns the action *relative to neighboring bases*, rather than treating each base as an independent feature.
 
-Markov Decision Process 
+## Markov Decision Process 
+
 **State**: The graph
 
 **Action**: Which of the 52 bases the available ambulance should relocate to
@@ -73,7 +78,7 @@ A Double Standard Model (linear program via PuLP) optimizes the initial number o
 
 PPO from Stable-Baselines3 with a custom GAT feature extractor, trained across all CPU cores in parallel.
 
-Key hyperparameters
+**hyperparameters**
 
 | Parameter | Value |
 |---|---|
@@ -86,5 +91,44 @@ Key hyperparameters
 | Clip range (ε) | 0.2 |
 | `n_steps` / `batch_size` / `n_epochs` | 1024 / 512 / 3 |
 
-Learning curve
+**Learning curve**
+
 ![alt text](pictures/learning_curve.png)
+
+
+## File Structure
+DES_ambo.py               # Gymnasium DES environment
+GAT.py                    # Graph Attention Network feature extractor
+DSM_ambo.py               # Double Standard Model (initial placement optimizer)
+parallel_train.py         # PPO training
+map_data_processing.ipynb # Spatial data preprocessing
+data/
+├── accident_rate.csv
+├── ambulance_initialization.csv
+├── distance_base_to_incident.csv
+├── distance_hospital_to_base.csv
+├── distance_base_to_base.csv
+└── nearest_places_data.csv
+
+## Dependencies
+simpy
+gymnasium
+stable-baselines3
+torch
+torch-geometric
+numpy
+pandas
+pulp
+matplotlib
+
+## Usage
+
+**1. Optimize initial ambulance placement:**
+```bash
+python DSM_ambo.py
+```
+
+**2. Train the PPO + GAT agent:**
+```bash
+python parallel_train.py
+```
