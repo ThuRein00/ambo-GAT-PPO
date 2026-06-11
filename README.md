@@ -1,6 +1,6 @@
-# Dynamic Ambulance Redeployment in Bangkok via Graph Attention Network and Deep Reinforcement Learning
+# Dynamic Ambulance Relocation via Graph Attention Network and Deep Reinforcement Learning
 
-A Deep Reinforcement Learning system for dynamic ambulance redeployment in Bangkok, Thailand. When an ambulance becomes available after dropping a patient at a hospital, a trained PPO agent with a Graph Attention Network (GAT) feature extractor recommends which base to relocate, while optimizing for future response.
+A Deep Reinforcement Learning system for dynamic ambulance redeployment in Bangkok, Thailand. When an ambulance becomes available after dropping a patient at a hospital, a trained PPO agent with a Graph Attention Network (GAT) recommends which base to relocate, while optimizing for future response.
 
 ## Results
 ![alt text](results/ratio_comparison.png)
